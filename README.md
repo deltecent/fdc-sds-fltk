@@ -17,9 +17,9 @@ it, and put `fdcsds` (`fdcsds.exe` on Windows) wherever you like.
 
 | Platform | Download | Notes |
 |---|---|---|
-| Windows | `fdcsds-windows-x64.zip` | Windows 10 or later. |
-| macOS | `fdcsds-macos-universal.tar.gz` | macOS 11 or later, Apple Silicon and Intel. |
-| Linux | `fdcsds-linux-x86_64.tar.gz` | Needs a desktop with GTK 3 (nearly all do). |
+| Windows | [fdcsds-windows-x64.zip](https://github.com/deltecent/fdc-sds-fltk/releases/latest/download/fdcsds-windows-x64.zip) | Windows 10 or later. |
+| macOS | [fdcsds-macos-universal.tar.gz](https://github.com/deltecent/fdc-sds-fltk/releases/latest/download/fdcsds-macos-universal.tar.gz) | macOS 11 or later, Apple Silicon and Intel. |
+| Linux | [fdcsds-linux-x86_64.tar.gz](https://github.com/deltecent/fdc-sds-fltk/releases/latest/download/fdcsds-linux-x86_64.tar.gz) | Needs a desktop with GTK 3 (nearly all do). |
 
 **macOS:** the program is not signed, so macOS blocks it the first time. Either
 right-click it in Finder and choose **Open**, or clear the quarantine flag once:
