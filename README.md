@@ -74,9 +74,8 @@ altairsim> RUN FF00
 ```
 
 Use the server computer's name or IP address instead of `localhost` if it is on
-another machine. The simulator must not run at full speed, because CP/M's disk
-timeouts are counted in instructions; see the `fdcplus` section of the
-altairsim manual for details.
+another machine. The simulator must not run at full speed; see
+[CPU speed](#cpu-speed) below.
 
 The server accepts one connection at a time. If a new connection arrives, it
 replaces the current one, so a restarted simulator can reconnect immediately.
@@ -125,7 +124,7 @@ both are set to the same baud rate.
 The baud rate must be the same at both ends. 230.4K works on most USB serial
 adapters; 403.2K and 460.8K are faster but need an adapter that supports them,
 and 38.4K is slower but works almost anywhere. As with TCP, the simulator must
-not run at full speed; see the `fdcplus` section of the altairsim manual.
+not run at full speed; see [CPU speed](#cpu-speed) below.
 
 To find your COM port numbers, use either of these:
 
@@ -167,6 +166,22 @@ original Lifeboat or Burcon CP/M on a real disk drive. Not every USB adapter
 supports 76.8K (FTDI adapters do). If it doesn't work, **38.4K** most likely
 will. 57.6K, 19.2K, and 9.6K are also available.
 
+### CPU speed
+
+With the serial drive server, the FDC+ works with a 2 MHz or 4 MHz Z80 CPU
+board. A 2 MHz CPU is required only for real 8" drives running original Altair
+8" software (Disk BASIC, Altair DOS, CP/M for Altair) and for 1.5 MB CP/M,
+because their data transfer loops depend on 2 MHz timing. Neither applies to
+the serial drive. See [FDC+ Operation with a Z80 at 4MHz](https://deramp.com/downloads/altair/hardware/fdc+/Operation%20with%204MHz%20Z80.pdf).
+
+In altairsim, the processor must have a set clock speed (`clock_hz`) rather
+than run at full speed. CP/M gives up on a sector after a fixed number of
+passes through a loop, so a whole track must arrive over the line within that
+time. At full speed the loop ends in a few milliseconds and CP/M reports bad
+sectors. A faster clock needs a faster line: 2 MHz works at every baud rate,
+and 10 MHz works at 230.4K. The examples above use 2 MHz. See the `fdcplus`
+section of the altairsim manual for details.
+
 ### Loading disk images
 
 Each of the four drives, Disk 0 to Disk 3, has its own panel.
@@ -192,8 +207,8 @@ eight inch drive with 2048 tracks instead of 77. The server does not care which
 type is loaded, but the image type must match the drive type selected on the
 FDC+.
 
-Many disk images of original Altair software are linked from the FDC+ page at
-[deramp.com](https://deramp.com).
+Many disk images of original Altair software are linked from the
+[FDC+ page](https://deramp.com/fdc_plus.html) at deramp.com.
 
 ### Indicators
 
@@ -222,6 +237,16 @@ The serial disk protocol uses tight timeouts so that disk performance is
 realistic. Heavy activity on the same computer, such as video playback, can
 occasionally cause disk errors on the Altair while disk I/O is in progress. If
 this happens, avoid other work on the computer during disk access.
+
+## References
+
+- [FDC+ Enhanced Floppy Disk Controller](https://deramp.com/fdc_plus.html) -
+  the FDC+ page at deramp.com, with manuals, disk images, and the original
+  Windows server.
+- [FDC+ Operation with a Z80 at 4MHz](https://deramp.com/downloads/altair/hardware/fdc+/Operation%20with%204MHz%20Z80.pdf) -
+  which software needs a 2 MHz CPU.
+- [altairsim](https://altairsim.com) - the Altair simulator, with the
+  `fdcplus` device ([source on GitHub](https://github.com/deltecent/altairsim)).
 
 ## Building from source
 
