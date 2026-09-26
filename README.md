@@ -88,19 +88,23 @@ line, exactly as an FDC+ would. This is a good way to test a serial setup before
 connecting a real Altair. The example below uses a Windows PC with two serial
 ports, COM3 (the Serial Drive Server) and COM4 (altairsim), joined by a
 null-modem cable. These COM port numbers may be different on your computer.
-The server's port list shows the ports it finds, and Windows Device Manager
-lists them under **Ports (COM & LPT)**. Wherever the example says COM3 or COM4,
-use your own port numbers.
+Wherever the example says COM3 or COM4, use your own port numbers. How to
+find them is described after the example.
 
-1. In the server, select **Serial**, choose **COM3**, and set the baud rate to
-   **230.4K**. Load a bootable image in Disk 0.
-2. Start `altairsim` with no arguments or TOML file, which gives its `default`
-   machine. Run it from a folder without an `altairsim.toml`, because altairsim
-   loads that file instead if it finds one. Then enter these commands at the
-   `altairsim>` prompt:
+1. In the FDC+ Serial Drive Server window, select **Serial** in the drop-down
+   at the top left. In the port drop-down to its right, choose **COM3**. In
+   the baud rate drop-down next to it, choose **230.4K**. The line at the
+   bottom of the window should then read `Serial COM3 at 230.4K`.
+2. In the **Disk 0** panel of the same window, click **Load** and choose a
+   bootable disk image, such as a CP/M 2.2 eight inch image.
+3. Open a Command Prompt, change to a folder that does not contain an
+   `altairsim.toml` file (altairsim loads that file instead if it finds one),
+   and type `altairsim` with no arguments or TOML file. This starts
+   altairsim's `default` machine and shows the `altairsim>` prompt.
+4. Enter these commands at the `altairsim>` prompt, pressing Enter after each
+   one. The `CONNECT` line uses COM4, the port for altairsim:
 
 ```
-C:\> altairsim
 altairsim> BOARDS REMOVE dsk0
 altairsim> BOARDS ADD fdcplus fdc0
 altairsim> SET cpu0 clock_hz=2000000
@@ -109,10 +113,29 @@ altairsim> CONNECT fdc0:line serial:COM4
 altairsim> RUN FF00
 ```
 
+If everything is connected correctly, the **Receive** light in the FDC+ Serial
+Drive Server window turns green, the **Disk Enable** and **Head Load** lights
+in the **Disk 0** panel light up red, and the track number counts up as the
+disk is read. After a few seconds, CP/M's `A>` prompt appears in altairsim.
+
+If nothing happens, check that the null-modem cable is connected to both
+ports, that the server is using one port and altairsim the other, and that
+both are set to the same baud rate.
+
 The baud rate must be the same at both ends. 230.4K works on most USB serial
 adapters; 403.2K and 460.8K are faster but need an adapter that supports them,
 and 38.4K is slower but works almost anywhere. As with TCP, the simulator must
 not run at full speed; see the `fdcplus` section of the altairsim manual.
+
+To find your COM port numbers, use either of these:
+
+- **In the FDC+ Serial Drive Server window:** select **Serial** in the
+  drop-down at the top left, then click the port drop-down to its right. It
+  lists every serial port on the computer. If you plugged in a USB serial
+  adapter after starting the server, click **Rescan** first.
+- **In Windows Device Manager:** right-click the **Start** button, choose
+  **Device Manager**, and expand **Ports (COM & LPT)**. Each port is listed
+  with its number, for example "USB Serial Port (COM3)".
 
 On macOS or Linux, use the device names instead, such as
 `serial:/dev/cu.usbserial-A10K` or `serial:/dev/ttyUSB1`.
