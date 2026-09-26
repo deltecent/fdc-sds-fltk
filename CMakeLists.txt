@@ -27,6 +27,7 @@ set(FLTK_BUILD_GL            OFF CACHE BOOL "" FORCE)
 set(FLTK_BUILD_FORMS         OFF CACHE BOOL "" FORCE)
 set(FLTK_BUILD_HTML_DOCS     OFF CACHE BOOL "" FORCE)
 set(FLTK_BUILD_PDF_DOCS      OFF CACHE BOOL "" FORCE)
+set(FLTK_MSVC_RUNTIME_DLL    OFF CACHE BOOL "" FORCE)  # match our static MSVC runtime
 
 # Always use FLTK's bundled image libraries. System copies (e.g. Homebrew's,
 # which are arm64 only) would add runtime dependencies and break universal
