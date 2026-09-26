@@ -17,9 +17,9 @@ it, and put `fdcsds` (`fdcsds.exe` on Windows) wherever you like.
 
 | Platform | Download | Notes |
 |---|---|---|
-| Windows | `fdcsds-windows-x64.zip` | Windows 10 or later. |
-| macOS | `fdcsds-macos-universal.tar.gz` | macOS 11 or later, Apple Silicon and Intel. |
-| Linux | `fdcsds-linux-x86_64.tar.gz` | Needs a desktop with GTK 3 (nearly all do). |
+| Windows | [fdcsds-windows-x64.zip](https://github.com/deltecent/fdc-sds-fltk/releases/latest/download/fdcsds-windows-x64.zip) | Windows 10 or later. |
+| macOS | [fdcsds-macos-universal.tar.gz](https://github.com/deltecent/fdc-sds-fltk/releases/latest/download/fdcsds-macos-universal.tar.gz) | macOS 11 or later, Apple Silicon and Intel. |
+| Linux | [fdcsds-linux-x86_64.tar.gz](https://github.com/deltecent/fdc-sds-fltk/releases/latest/download/fdcsds-linux-x86_64.tar.gz) | Needs a desktop with GTK 3 (nearly all do). |
 
 **macOS:** the program is not signed, so macOS blocks it the first time. Either
 right-click it in Finder and choose **Open**, or clear the quarantine flag once:
@@ -58,9 +58,14 @@ is exactly the FDC+ serial protocol.
 
 To use it, select **TCP** in the server, load a bootable image in Disk 0, and
 connect the simulator's FDC+ to the server with a `socket:HOST:PORT` endpoint.
-For example, with both on the same computer:
+
+Start `altairsim` with no arguments or TOML file, which gives its `default`
+machine. Run it from a folder without an `altairsim.toml`, because altairsim
+loads that file instead if it finds one. Then enter these commands at the
+`altairsim>` prompt. For example, with both on the same computer:
 
 ```
+$ altairsim
 altairsim> BOARDS REMOVE dsk0
 altairsim> BOARDS ADD fdcplus fdc0
 altairsim> SET cpu0 clock_hz=2000000
@@ -75,6 +80,42 @@ altairsim manual for details.
 
 The server accepts one connection at a time. If a new connection arrives, it
 replaces the current one, so a restarted simulator can reconnect immediately.
+
+### Serial and altairsim
+
+The simulator's `fdcplus` device can also reach the server over a real serial
+line, exactly as an FDC+ would. This is a good way to test a serial setup before
+connecting a real Altair. The example below uses a Windows PC with two serial
+ports, COM3 (the Serial Drive Server) and COM4 (altairsim), joined by a
+null-modem cable. These COM port numbers may be different on your computer.
+The server's port list shows the ports it finds, and Windows Device Manager
+lists them under **Ports (COM & LPT)**. Wherever the example says COM3 or COM4,
+use your own port numbers.
+
+1. In the server, select **Serial**, choose **COM3**, and set the baud rate to
+   **230.4K**. Load a bootable image in Disk 0.
+2. Start `altairsim` with no arguments or TOML file, which gives its `default`
+   machine. Run it from a folder without an `altairsim.toml`, because altairsim
+   loads that file instead if it finds one. Then enter these commands at the
+   `altairsim>` prompt:
+
+```
+C:\> altairsim
+altairsim> BOARDS REMOVE dsk0
+altairsim> BOARDS ADD fdcplus fdc0
+altairsim> SET cpu0 clock_hz=2000000
+altairsim> SET fdc0 baud=230400
+altairsim> CONNECT fdc0:line serial:COM4
+altairsim> RUN FF00
+```
+
+The baud rate must be the same at both ends. 230.4K works on most USB serial
+adapters; 403.2K and 460.8K are faster but need an adapter that supports them,
+and 38.4K is slower but works almost anywhere. As with TCP, the simulator must
+not run at full speed; see the `fdcplus` section of the altairsim manual.
+
+On macOS or Linux, use the device names instead, such as
+`serial:/dev/cu.usbserial-A10K` or `serial:/dev/ttyUSB1`.
 
 ### Baud rate with the FDC+
 
