@@ -28,6 +28,13 @@ set(FLTK_BUILD_FORMS         OFF CACHE BOOL "" FORCE)
 set(FLTK_BUILD_HTML_DOCS     OFF CACHE BOOL "" FORCE)
 set(FLTK_BUILD_PDF_DOCS      OFF CACHE BOOL "" FORCE)
 
+# Always use FLTK's bundled image libraries. System copies (e.g. Homebrew's,
+# which are arm64 only) would add runtime dependencies and break universal
+# macOS builds.
+set(FLTK_USE_SYSTEM_LIBJPEG  OFF CACHE BOOL "" FORCE)
+set(FLTK_USE_SYSTEM_LIBPNG   OFF CACHE BOOL "" FORCE)
+set(FLTK_USE_SYSTEM_ZLIB     OFF CACHE BOOL "" FORCE)
+
 FetchContent_Declare(fltk
   GIT_REPOSITORY https://github.com/fltk/fltk.git
   GIT_TAG        release-1.4.5
