@@ -70,12 +70,15 @@ altairsim> BOARDS REMOVE dsk0
 altairsim> BOARDS ADD fdcplus fdc0
 altairsim> SET cpu0 clock_hz=2000000
 altairsim> CONNECT fdc0:line socket:localhost:8800
+altairsim> SET fdc0 DEBUG=error
 altairsim> RUN FF00
 ```
 
 Use the server computer's name or IP address instead of `localhost` if it is on
 another machine. The simulator must not run at full speed; see
-[CPU speed](#cpu-speed) below.
+[CPU speed](#cpu-speed) below. `SET fdc0 DEBUG=error` makes altairsim print
+error messages if the connection to the server fails; see
+[Seeing errors in altairsim](#seeing-errors-in-altairsim) below.
 
 The server accepts one connection at a time. If a new connection arrives, it
 replaces the current one, so a restarted simulator can reconnect immediately.
@@ -109,6 +112,7 @@ altairsim> BOARDS ADD fdcplus fdc0
 altairsim> SET cpu0 clock_hz=2000000
 altairsim> SET fdc0 baud=230400
 altairsim> CONNECT fdc0:line serial:COM4
+altairsim> SET fdc0 DEBUG=error
 altairsim> RUN FF00
 ```
 
@@ -117,9 +121,10 @@ Drive Server window turns green, the **Disk Enable** and **Head Load** lights
 in the **Disk 0** panel light up red, and the track number counts up as the
 disk is read. After a few seconds, CP/M's `A>` prompt appears in altairsim.
 
-If nothing happens, check that the null-modem cable is connected to both
-ports, that the server is using one port and altairsim the other, and that
-both are set to the same baud rate.
+If nothing happens, read the error messages altairsim prints (see
+[Seeing errors in altairsim](#seeing-errors-in-altairsim) below), and check
+that the null-modem cable is connected to both ports, that the server is using
+one port and altairsim the other, and that both are set to the same baud rate.
 
 The baud rate must be the same at both ends. 230.4K works on most USB serial
 adapters; 403.2K and 460.8K are faster but need an adapter that supports them,
@@ -165,6 +170,43 @@ With the 88-2SIOJP, **76.8K** is ideal and gives performance similar to the
 original Lifeboat or Burcon CP/M on a real disk drive. Not every USB adapter
 supports 76.8K (FTDI adapters do). If it doesn't work, **38.4K** most likely
 will. 57.6K, 19.2K, and 9.6K are also available.
+
+### Seeing errors in altairsim
+
+If nothing happens after `RUN FF00`, the server is not answering. The boot
+PROM waits forever for the drive to be ready, just as it does with a real
+FDC+, so without extra help there is no message at all.
+
+The `SET fdc0 DEBUG=error` line in the examples above turns on altairsim's
+error reports for the FDC+ serial line. altairsim then prints a message when:
+
+- the server does not answer, for example
+  `fdc0: server not answering (no STAT reply in 1 s)`, and again when it
+  starts answering
+- the server sends a bad or unexpected reply
+- a track arrives with a bad checksum, or does not arrive in full
+- the server does not accept a write
+
+If altairsim says the server is not answering, look at the **Receive** light in
+the FDC+ Serial Drive Server window:
+
+- **Receive stays grey:** nothing from altairsim is reaching the server. Check
+  that the server's connection type (Serial or TCP) and port match altairsim's,
+  and on a serial line that the cable is plugged in at both ends and is a
+  null-modem cable (a straight-through cable does not work).
+- **Receive turns green:** data is arriving, but the server cannot understand
+  it, so it does not reply. This is almost always a baud rate mismatch: make
+  sure the server and altairsim use the same baud rate.
+
+If altairsim prints no errors but nothing boots, the server is answering but
+has nothing to boot from: load a bootable disk image in **Disk 0**.
+
+`SET fdc0 DEBUG=link` shows the same errors, plus every request and every track
+sent between altairsim and the server.
+
+The `error` debug flag is newer than the `fdcplus` device itself. If altairsim
+reports an unknown debug flag, your copy of altairsim is too old: update it, or
+leave the `SET fdc0 DEBUG=error` line out.
 
 ### CPU speed
 
