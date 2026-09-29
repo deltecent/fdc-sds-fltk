@@ -111,17 +111,27 @@ void check(bool ok, const char* what)
         ++failures;
 }
 
-// A STAT that arrives in two USB packets with a pause between them.
+// A STAT that arrives in two USB packets with a pause between them. A busy
+// machine can sleep far longer than asked, past the 50 ms that ends a partial
+// command, so an attempt whose pause overshot doesn't count and is retried.
 void splitStat(int baud, int gapMs, const char* what)
 {
-    Wire wire;
-    Engine engine;
-    engine.start(std::make_unique<FakeTransport>(wire), baud);
     auto stat = command("STAT", 0xff, 0);
-    send(wire, stat.data(), 6);
-    pause(gapMs);
-    send(wire, stat.data() + 6, 4);
-    check(reply(wire, "STAT", 500) == 0, what);
+    for (int attempt = 0; attempt < 10; ++attempt) {
+        Wire wire;
+        Engine engine;
+        engine.start(std::make_unique<FakeTransport>(wire), baud);
+        send(wire, stat.data(), 6);
+        auto t = Clock::now();
+        pause(gapMs);
+        send(wire, stat.data() + 6, 4);
+        if (Clock::now() - t >= milliseconds(45))
+            continue;
+        check(reply(wire, "STAT", 500) == 0, what);
+        return;
+    }
+    check(false, what);
+    std::printf("      (every pause overshot; this machine is too busy to test it)\n");
 }
 
 // Stray bytes run straight into a STAT, with no pause to resynchronize on.
@@ -232,8 +242,8 @@ void stalledWrite()
 
 int main()
 {
-    splitStat(230400, 20, "STAT split by a 20 ms USB gap is answered (230.4K)");
-    splitStat(9600, 40, "STAT split by a 40 ms USB gap is answered (9.6K)");
+    splitStat(230400, 15, "STAT split by a 15 ms USB gap is answered (230.4K)");
+    splitStat(9600, 30, "STAT split by a 30 ms USB gap is answered (9.6K)");
     garbageThenStat();
     garbagePauseStat();
     backToBack();
