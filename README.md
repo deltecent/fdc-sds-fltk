@@ -7,7 +7,7 @@ executable.
 
 Based on the original Windows FDC+ Serial Drive Server by M. Douglas (DeRamp).
 
-Version 1.0. Copyright © 2026 Deltec Enterprises LLC. MIT License.
+Version 1.1. Copyright © 2026 Deltec Enterprises LLC. MIT License.
 
 ## Installation
 
@@ -300,6 +300,10 @@ and linked statically).
 
 The executable is `build/fdcsds` (`build/Release/fdcsds.exe` with Visual Studio).
 
+To run the protocol tests (about 15 seconds):
+
+    ctest --test-dir build -C Release --output-on-failure
+
 For a universal macOS binary, add
 `-DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0`
 when configuring.
@@ -328,6 +332,7 @@ publishes a release.
 | `src/serial_linux.cpp` / `serial_macos.cpp` | Custom baud rates, port enumeration |
 | `src/serial_win32.cpp` | Serial transport for Windows |
 | `src/net_posix.cpp` / `net_win32.cpp` | Sockets |
+| `tests/engine_test.cpp` | Protocol engine tests |
 
 The sources contain no conditional compilation; `CMakeLists.txt` picks the
 platform files.

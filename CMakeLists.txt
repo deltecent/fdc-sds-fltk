@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(fdcsds VERSION 1.0 LANGUAGES C CXX)
+project(fdcsds VERSION 1.1 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -88,3 +88,12 @@ target_compile_definitions(fdcsds PRIVATE
 if(MINGW)
   target_link_options(fdcsds PRIVATE -static)
 endif()
+
+# ---------------------------------------------------------------------------
+# Tests: the protocol engine against a scripted transport
+# ---------------------------------------------------------------------------
+
+enable_testing()
+add_executable(engine_test tests/engine_test.cpp src/engine.cpp)
+target_link_libraries(engine_test PRIVATE Threads::Threads)
+add_test(NAME engine COMMAND engine_test)

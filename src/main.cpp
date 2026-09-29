@@ -364,6 +364,7 @@ void App::connect(bool reportErrors)
 
     std::string error;
     std::unique_ptr<Transport> transport;
+    int baud = 0;
 
     if (mode_->value() == MODE_SERIAL) {
         int idx = serialPort_->value();
@@ -374,6 +375,7 @@ void App::connect(bool reportErrors)
         serialName_ = portNames_[idx];
         const BaudRate& b = BAUD_RATES[baud_->value() < 0 ? 0 : baud_->value()];
         transport = openSerial(serialName_, b.rate, b.label, error);
+        baud = b.rate;
     } else {
         transport = openTcpServer(std::atoi(tcpPort_->value()), error);
     }
@@ -386,7 +388,7 @@ void App::connect(bool reportErrors)
     }
 
     errorStatus_.clear();
-    engine_.start(std::move(transport));
+    engine_.start(std::move(transport), baud);
 }
 
 void App::onAbout(Fl_Widget*, void*)

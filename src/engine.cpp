@@ -19,9 +19,12 @@
 // Response codes: 0 OK, 1 not ready, 2 checksum error, 3 write error.
 //
 // Commands with a bad checksum are ignored; the FDC retries after one second.
+// Track data being written must keep arriving: the write fails one second
+// after the last byte, as the FDC itself does.
 
 #include "engine.h"
 
+#include <algorithm>
 #include <chrono>
 #include <cstring>
 
@@ -38,7 +41,9 @@ constexpr int BLOCK_THRESHOLD = 1024;       // track length at or below this mea
 constexpr int MAX_BLOCK_NUM = 399;          // default max block for bargraph scaling
 constexpr auto NO_ACTIVITY_TIME = std::chrono::seconds(3);
 constexpr int POLL_MS = 10;
-constexpr int WRITE_DATA_TIMEOUT_MS = 5000;
+constexpr int MIN_GAP_MS = 50;              // silence that ends a partial command
+constexpr int GAP_CHARS = 20;               // ...or this many character times, if longer
+constexpr int WRITE_DATA_TIMEOUT_MS = 1000; // after the last byte of track data
 
 using Clock = std::chrono::steady_clock;
 
@@ -61,6 +66,13 @@ uint16_t checksum(const uint8_t* p, size_t len)
     return static_cast<uint16_t>(sum);
 }
 
+bool isCommand(const uint8_t* cmd)
+{
+    return (std::memcmp(cmd, "STAT", 4) == 0 || std::memcmp(cmd, "READ", 4) == 0
+            || std::memcmp(cmd, "WRIT", 4) == 0)
+        && checksum(cmd, COMMAND_LENGTH) == getWord(cmd + 8);
+}
+
 int maxTrackForSize(long size)
 {
     if (size < 200000)
@@ -79,10 +91,16 @@ Engine::~Engine()
         unmount(i);
 }
 
-void Engine::start(std::unique_ptr<Transport> transport)
+void Engine::start(std::unique_ptr<Transport> transport, int baud)
 {
     stop();
     transport_ = std::move(transport);
+
+    // Ten bits per character on the wire. baud is 0 for TCP.
+    int gapMs = MIN_GAP_MS;
+    if (baud > 0)
+        gapMs = std::max(gapMs, GAP_CHARS * 10 * 1000 / baud);
+    gap_ = std::chrono::milliseconds(gapMs);
     {
         std::lock_guard<std::mutex> lock(mutex_);
         view_.running = true;
@@ -155,10 +173,13 @@ void Engine::run()
             return;
         }
 
-        // A gap in the data discards any partial command, which keeps us in
-        // sync with the FDC after a garbled or truncated message.
+        // A real gap in the data discards any partial command, which keeps us
+        // in sync with the FDC after a truncated message. USB serial adapters
+        // deliver bytes in packets, often several milliseconds apart, so a
+        // short pause in the middle of a command is not a gap.
         if (n == 0) {
-            idx = 0;
+            if (idx > 0 && Clock::now() - lastRx >= gap_)
+                idx = 0;
             if (!idle && Clock::now() - lastRx >= NO_ACTIVITY_TIME) {
                 idle = true;
                 std::lock_guard<std::mutex> lock(mutex_);
@@ -178,10 +199,15 @@ void Engine::run()
         idx += static_cast<size_t>(n);
         if (idx < CMD_SIZE)
             continue;
-        idx = 0;
 
-        if (checksum(cmd, COMMAND_LENGTH) != getWord(cmd + 8))
+        // Not a valid command: slide along one byte and try again, so stray
+        // bytes ahead of a command don't hide it.
+        if (!isCommand(cmd)) {
+            std::memmove(cmd, cmd + 1, CMD_SIZE - 1);
+            idx = CMD_SIZE - 1;
             continue;
+        }
+        idx = 0;
 
         process(cmd);
     }
@@ -291,6 +317,8 @@ void Engine::sendResponse(const char* name, uint16_t code, uint16_t data)
 
 bool Engine::readExact(uint8_t* buf, size_t len, int timeoutMs)
 {
+    // The timeout runs from the last byte received, so a long transfer at a
+    // low baud rate isn't cut off while data is still arriving.
     auto deadline = Clock::now() + std::chrono::milliseconds(timeoutMs);
     size_t got = 0;
     while (got < len) {
@@ -301,6 +329,8 @@ bool Engine::readExact(uint8_t* buf, size_t len, int timeoutMs)
         int n = transport_->read(buf + got, len - got, static_cast<int>(remaining));
         if (n < 0)
             return false;
+        if (n > 0)
+            deadline = Clock::now() + std::chrono::milliseconds(timeoutMs);
         got += static_cast<size_t>(n);
     }
     return true;

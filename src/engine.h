@@ -5,6 +5,7 @@
 #include "transport.h"
 
 #include <atomic>
+#include <chrono>
 #include <cstdint>
 #include <cstdio>
 #include <memory>
@@ -40,7 +41,8 @@ public:
     Engine(const Engine&) = delete;
     Engine& operator=(const Engine&) = delete;
 
-    void start(std::unique_ptr<Transport> transport);
+    // baud is the serial line rate, or 0 for TCP.
+    void start(std::unique_ptr<Transport> transport, int baud = 0);
     void stop();
 
     // Takes ownership of file, which must be open for binary read/write.
@@ -69,6 +71,7 @@ private:
     std::unique_ptr<Transport> transport_;
     std::thread thread_;
     std::atomic<bool> running_{false};
+    std::chrono::milliseconds gap_{50}; // silence that ends a partial command
 
     uint8_t trackBuf_[TRACKBUF_LEN + 2] = {};
 };
